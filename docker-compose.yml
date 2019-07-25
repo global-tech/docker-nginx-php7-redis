@@ -1,0 +1,43 @@
+version: "3"
+services:
+  # cache (redis)
+  redis: 
+    image: redis:alpine
+    container_name: ${PROJECT_NAME}-redis
+
+  # webserver (nginx)
+  webserver:
+    image: nginx:alpine
+    container_name: ${PROJECT_NAME}-webserver
+    working_dir: /application
+    volumes: 
+      - ./application:/application
+      - ./sourcefiles/nginx:/etc/nginx/conf.d
+    ports:
+      - "3001:80"
+    networks: 
+      - traefik
+        #dev_net:
+        #deipv4_address: 172.29.1.3
+
+  # php
+  php-fpm:
+    build: sourcefiles/php-fpm
+    container_name: ${PROJECT_NAME}-php-fpm
+    working_dir: /application
+    volumes:
+      - ./application:/application
+      - ./sourcefiles/php-fpm/php-ini-overrides.ini:/etc/php/7.2/fpm/conf.d/99-overrides.ini
+    networks: 
+      - traefik
+    #dev_net:
+    #ipv4_address: 172.29.1.4
+
+networks: 
+  traefik:
+    external: true
+  dev_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
